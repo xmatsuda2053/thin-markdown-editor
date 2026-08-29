@@ -1,0 +1,55 @@
+@use "sass:map";
+
+$size: (
+  s: (
+    height: 24px,
+    icon: 1rem,
+  ),
+  m: (
+    height: 32px,
+    icon: 1.25rem,
+  ),
+  l: (
+    height: 40px,
+    icon: 1.5rem,
+  ),
+);
+
+@each $key, $value in $size {
+  &.size-#{$key} {
+    line-height: map.get($value, height);
+    --svg-icon-size: #{map.get($value, icon)};
+  }
+}
+
+.svg-button {
+  display: inline-flex;
+  align-items: center;
+
+  padding-block: var(--space-xs);
+  padding-inline: var(--space-xs);
+
+  border-top-left-radius: var(--button-radius-top-left, 0);
+  background-color: var(--button-background-color, transparent);
+
+  cursor: pointer;
+
+  com-svg-icon {
+    transition:
+      transform 0.2s ease,
+      color 0.2s ease;
+  }
+
+  &:hover {
+    com-svg-icon {
+      transform: translateY(-2px);
+    }
+  }
+
+  &:active {
+    com-svg-icon {
+      transform: translateY(0);
+      color: var(--color-gray-100);
+    }
+  }
+}

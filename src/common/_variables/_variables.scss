@@ -1,0 +1,56 @@
+// ==========================================
+// 10-Step Gray Palette
+// ==========================================
+$color-gray-100: #111827; // 最濃
+$color-gray-200: #1f2937;
+$color-gray-300: #374151;
+$color-gray-400: #4b5563;
+$color-gray-500: #6b7280;
+$color-gray-600: #9ca3af;
+$color-gray-700: #d1d5db;
+$color-gray-800: #e5e7eb;
+$color-gray-900: #f3f4f6;
+$color-gray-950: #f9fafb; // 最淡
+
+// ==========================================
+// Spacing Palette (xxs to xxl)
+// ==========================================
+
+// 1. 基準サイズ (m) の定義
+$space-base: 1rem; // 16px相当（ブラウザ標準）
+
+// 2. 比率による各サイズの計算
+$space-xxs: $space-base * 0.25; // 4px
+$space-xs: $space-base * 0.5; // 8px
+$space-s: $space-base * 0.75; // 12px
+$space-m: $space-base; // 16px (基準)
+$space-l: $space-base * 1.5; // 24px
+$space-xl: $space-base * 2; // 32px
+$space-xxl: $space-base * 3; // 48px
+
+// ==========================================
+// Border Radius Palette (s, m, l)
+// ==========================================
+
+// 1. 基準サイズ (m) の定義
+$radius-base: 0.5rem; // 8px相当
+
+// 2. 比率による各サイズの計算
+$radius-s: $radius-base * 0.5; // 4px
+$radius-m: $radius-base; // 8px (基準)
+$radius-l: $radius-base * 2; // 16px
+
+// 補足: 完全なカプセル型（ピル形状）や円形用の特殊値
+$radius-full: 50%;
+
+// ==========================================
+// Border Color Palette (Monotone)
+// ==========================================
+
+// 用途別（セマンティック）ボーダーカラー
+$border-divider: $color-gray-800; // #e5e7eb (区切り線・divider)
+$border-subtle: $color-gray-800; // #e5e7eb (控えめなカード枠線)
+$border-default: $color-gray-700; // #d1d5db (標準コンテンツ境界線)
+$border-strong: $color-gray-600; // #9ca3af (ホバー時・強調枠線)
+$border-dark: $color-gray-300; // #374151 (くっきりしたダーク境界線)
+$border-focus: $color-gray-100; // #111827 (フォーカス時・選択中)

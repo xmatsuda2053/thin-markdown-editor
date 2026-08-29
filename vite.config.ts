@@ -1,9 +1,9 @@
 import { defineConfig } from "vite";
-import { viteSingleFile } from "vite-plugin-singlefile";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [viteSingleFile(), tsconfigPaths()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   build: {
     target: "es2020",
     assetsInlineLimit: 100000000,

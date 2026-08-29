@@ -18,7 +18,9 @@
     "experimentalDecorators": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@icons/*": ["./assets/icons/*"]
+      "@assets/*": ["./assets/*"],
+      "@icons/*": ["./assets/icons/*"],
+      "@common/*": ["./src/common/*"]
     }
   },
   "include": ["src", "assets/icons.ts"]
