@@ -23,7 +23,11 @@ import { emit } from "@utils/EventUtils";
 import { Variant } from "@/type/Variant";
 
 // Const
-import { DEFAULT_SUBMENU_WIDTH } from "@common/const";
+import {
+  DEFAULT_SUBMENU_WIDTH,
+  SUBMENU_OPEN_DELAY,
+  SUBMENU_CLOSE_DELAY,
+} from "@common/const";
 
 // Styles
 import styles from "./com-menu-item.lit.scss?inline";
@@ -96,6 +100,16 @@ export class ComMenuItem extends LitElement {
    */
   @query("com-menu-container") subMenuContainer!: LitElement;
 
+  /**
+   * サブメニューの開閉遅延タイマーID
+   *
+   * @private
+   * @type {(number | null)}
+   * @memberof ComMenuItem
+   */
+  private _openTimeoutId: number | null = null;
+  private _closeTimeoutId: number | null = null;
+
   // -------------------------------------------------------------
   // Initialization
   // -------------------------------------------------------------
@@ -120,6 +134,7 @@ export class ComMenuItem extends LitElement {
     super.connectedCallback();
     document.addEventListener("click", this._handleOutsideClick);
     window.addEventListener("resize", this._handleResize);
+    this.addEventListener("focusout", this._handleFocusOut);
   }
 
   /**
@@ -131,6 +146,8 @@ export class ComMenuItem extends LitElement {
     super.disconnectedCallback();
     document.removeEventListener("click", this._handleOutsideClick);
     window.removeEventListener("resize", this._handleResize);
+    this.removeEventListener("focusout", this._handleFocusOut);
+    this._clearTimers();
   }
 
   /**
@@ -147,6 +164,21 @@ export class ComMenuItem extends LitElement {
   }
 
   /**
+   * フォーカスがコンポーネントおよびスロットされた要素の外に移動した際に閉じる
+   *
+   * @private
+   * @param {FocusEvent} event
+   * @memberof ComMenuItem
+   */
+  private _handleFocusOut = (event: FocusEvent): void => {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !this.contains(nextTarget)) {
+      this._clearTimers();
+      this._isOpen = false;
+    }
+  };
+
+  /**
    * コンポーネント外のクリックを検知してメニューを閉じる
    * Shadow DOM 境界を越えて正しく判定するため composedPath() を使用する
    *
@@ -157,6 +189,7 @@ export class ComMenuItem extends LitElement {
     if (!this._isOpen) return;
     const path = event.composedPath();
     if (!path.includes(this)) {
+      this._clearTimers();
       this._isOpen = false;
     }
   };
@@ -225,6 +258,8 @@ export class ComMenuItem extends LitElement {
       class=${classMap(containerClasses)}
       @click=${this._handleItemClick}
       @close-menu=${this._handleCloseMenu}
+      @mouseenter=${this._handleMouseEnter}
+      @mouseleave=${this._handleMouseLeave}
     >
       <div class="icon">
         <com-svg-icon name=${this.icon}></com-svg-icon>
@@ -234,7 +269,6 @@ export class ComMenuItem extends LitElement {
         <com-svg-icon
           name="angle-right-solid-full"
           @click=${this._handleTriggerClick}
-          @mouseover=${this._handleMouseOver}
         ></com-svg-icon>
         <com-menu-container
           .isOpen=${this._isOpen}
@@ -247,6 +281,53 @@ export class ComMenuItem extends LitElement {
   }
 
   /**
+   * アイテムにマウスが乗ったときにサブメニューを開く（遅延付き）
+   *
+   * @private
+   * @memberof ComMenuItem
+   */
+  private _handleMouseEnter(): void {
+    this._clearTimers();
+    if (this._hasSubMenu) {
+      this._openTimeoutId = window.setTimeout(() => {
+        this._isOpen = true;
+      }, SUBMENU_OPEN_DELAY);
+    }
+  }
+
+  /**
+   * アイテムからマウスが離れたときにサブメニューを閉じる（遅延付き）
+   *
+   * @private
+   * @memberof ComMenuItem
+   */
+  private _handleMouseLeave(): void {
+    this._clearTimers();
+    if (this._isOpen) {
+      this._closeTimeoutId = window.setTimeout(() => {
+        this._isOpen = false;
+      }, SUBMENU_CLOSE_DELAY);
+    }
+  }
+
+  /**
+   * 開閉遅延タイマーをクリアする
+   *
+   * @private
+   * @memberof ComMenuItem
+   */
+  private _clearTimers(): void {
+    if (this._openTimeoutId !== null) {
+      window.clearTimeout(this._openTimeoutId);
+      this._openTimeoutId = null;
+    }
+    if (this._closeTimeoutId !== null) {
+      window.clearTimeout(this._closeTimeoutId);
+      this._closeTimeoutId = null;
+    }
+  }
+
+  /**
    * アイテムのクリックイベントを発行する。
    *
    * @private
@@ -255,6 +336,12 @@ export class ComMenuItem extends LitElement {
    */
   private _handleItemClick(event: MouseEvent): void {
     event.stopPropagation();
+    if (this._hasSubMenu) {
+      this._clearTimers();
+      this._isOpen = !this._isOpen;
+      return;
+    }
+    this._clearTimers();
     this._isOpen = false;
     emit(this, "click-menu-item");
     emit(this, "close-menu");
@@ -267,6 +354,7 @@ export class ComMenuItem extends LitElement {
    * @memberof ComMenu
    */
   private _handleCloseMenu(): void {
+    this._clearTimers();
     this._isOpen = false;
   }
 
@@ -279,19 +367,8 @@ export class ComMenuItem extends LitElement {
    */
   private _handleTriggerClick(event: MouseEvent): void {
     event.stopPropagation();
+    this._clearTimers();
     this._isOpen = !this._isOpen;
-  }
-
-  /**
-   * トリガーにマウスオーバーするとサブメニューを開く。
-   *
-   * @private
-   * @param {MouseEvent} event
-   * @memberof ComMenuItem
-   */
-  private _handleMouseOver(event: MouseEvent): void {
-    event.stopPropagation();
-    this._isOpen = true;
   }
 
   /**
