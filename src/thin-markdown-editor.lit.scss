@@ -52,6 +52,12 @@
         display: flex;
         align-items: center;
       }
+
+      com-menu-item {
+        &#delete-button {
+          color: var(--color-danger);
+        }
+      }
     }
   }
 
@@ -59,7 +65,7 @@
     display: flex;
     flex: 1;
 
-    padding: var(--space-xs);
+    padding: var(--space-s);
 
     border: none;
     border: 1px solid var(--color-border-default);

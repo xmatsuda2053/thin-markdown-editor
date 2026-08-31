@@ -21,6 +21,7 @@ import markdown_brands_solid_full from "@icons/markdown-brands-solid-full.svg?ra
 import palette_solid_full from "@icons/palette-solid-full.svg?raw";
 import sign_hanging_solid_full from "@icons/sign-hanging-solid-full.svg?raw";
 import table_solid_full from "@icons/table-solid-full.svg?raw";
+import trash_can_solid_full from "@icons/trash-can-solid-full.svg?raw";
 import triangle_exclamation_solid_full from "@icons/triangle-exclamation-solid-full.svg?raw";
 import xmarks_lines_solid_full from "@icons/xmarks-lines-solid-full.svg?raw";
 
@@ -48,6 +49,7 @@ export const icons: Record<string, string> = {
   "palette-solid-full": palette_solid_full,
   "sign-hanging-solid-full": sign_hanging_solid_full,
   "table-solid-full": table_solid_full,
+  "trash-can-solid-full": trash_can_solid_full,
   "triangle-exclamation-solid-full": triangle_exclamation_solid_full,
   "xmarks-lines-solid-full": xmarks_lines_solid_full,
 };

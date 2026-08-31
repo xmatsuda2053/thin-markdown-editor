@@ -79,6 +79,15 @@ export class ThinMarkdownEditor extends LitElement {
   unRadius: boolean = false;
 
   /**
+   * 削除要否の制御
+   *
+   * @type {boolean}
+   * @memberof ThinMarkdownEditor
+   */
+  @property({ type: Boolean })
+  deletable: boolean = false;
+
+  /**
    * 編集モードの制御
    *
    * @private
@@ -357,6 +366,9 @@ export class ThinMarkdownEditor extends LitElement {
       ${this._extensionCopyBlockRender()}
       <!--TimeStamp-->
       ${this._extensionTimeStampRender()}
+      <!--Delete-->
+      <hr slot="item" />
+      ${this._deleteButtonRender()}
     </com-menu>`;
   };
 
@@ -484,6 +496,28 @@ export class ThinMarkdownEditor extends LitElement {
   private _extensionTimeStampRender = (): HTMLTemplateResult => {
     return html` <com-menu-item slot="item" icon="clock-solid-full">
       TimeStamp
+    </com-menu-item>`;
+  };
+
+  // ------------------------------
+  // Delete
+  // ------------------------------
+
+  /**
+   * 削除ボタンを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _deleteButtonRender = (): HTMLTemplateResult | typeof nothing => {
+    if (!this.deletable) return nothing;
+
+    return html`<com-menu-item
+      id="delete-button"
+      slot="item"
+      icon="trash-can-solid-full"
+    >
+      Delete
     </com-menu-item>`;
   };
 
