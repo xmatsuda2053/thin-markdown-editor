@@ -22,6 +22,12 @@ import "@/common/com-svg-button/com-svg-button";
 import "@/common/com-menu/com-menu";
 import "@/common/com-menu-item/com-menu-item";
 
+// Extension
+import {
+  colorTagExtension,
+  formatMarkdown as formatColorMarkdown,
+} from "@extension/color/color-extension";
+
 // Utils
 import { emit } from "./utils/EventUtils";
 
@@ -149,6 +155,10 @@ export class ThinMarkdownEditor extends LitElement {
    */
   constructor() {
     super();
+
+    marked.use({
+      extensions: [colorTagExtension],
+    });
   }
 
   /**
@@ -430,9 +440,27 @@ export class ThinMarkdownEditor extends LitElement {
    * @memberof ThinMarkdownEditor
    */
   private _extensionColorRender = (): HTMLTemplateResult => {
-    return html` <com-menu-item slot="item" icon="palette-solid-full">
+    return html` <com-menu-item
+      slot="item"
+      icon="palette-solid-full"
+      @click-menu-item=${this._handleExtensionColorClick}
+    >
       Color
     </com-menu-item>`;
+  };
+
+  /**
+   * カラータグをエディタに追加
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _handleExtensionColorClick = () => {
+    if (!this.markdownEditor) return;
+
+    this.markdownEditor.focus();
+    formatColorMarkdown(this.markdownEditor);
+    emit(this, "input");
   };
 
   // ------------------------------
