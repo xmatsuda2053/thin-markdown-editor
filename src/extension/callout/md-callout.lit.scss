@@ -1,0 +1,44 @@
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.callout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  width: 100%;
+  padding-block: var(--space-xs);
+  padding-inline: var(--space-m);
+  border: 1px solid;
+  border-radius: var(--radius-l);
+
+  .icon {
+    // アイコンがテキストに押されて縮まないように固定
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .text {
+    // 【重要】残りの幅いっぱいに広げ、かつ親の幅以下に縮小できるようにする
+    flex: 1;
+    min-width: 0;
+
+    // 長い単語やURLでも確実に折り返す
+    overflow-wrap: anywhere;
+    word-break: break-word;
+
+    ::slotted(*) {
+      line-height: 1.3;
+      margin: 0 !important;
+    }
+  }
+}

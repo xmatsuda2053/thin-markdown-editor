@@ -17,19 +17,29 @@ import { classMap } from "lit/directives/class-map.js";
 // Third-party UI & Elements
 import "@github/markdown-toolbar-element";
 
-// Components
+// Common Components
 import "@/common/com-svg-button/com-svg-button";
 import "@/common/com-menu/com-menu";
 import "@/common/com-menu-item/com-menu-item";
 
-// Extension
+// Extension Components
 import {
   colorTagExtension,
   formatMarkdown as formatColorMarkdown,
 } from "@extension/color/color-extension";
 
+import "@extension/callout/md-callout";
+import {
+  calloutTagExtension,
+  formatMarkdown as formatCalloutMarkdown,
+} from "@extension/callout/callout-extension";
+
 // Utils
 import { emit } from "./utils/EventUtils";
+
+// Type
+import { ComMenuItem } from "@/common/com-menu-item/com-menu-item";
+import { Variant } from "./type/Variant";
 
 // Styles (Shadow DOM internal styles)
 import githubMarkdownStyles from "github-markdown-css/github-markdown-light.css?inline";
@@ -157,7 +167,7 @@ export class ThinMarkdownEditor extends LitElement {
     super();
 
     marked.use({
-      extensions: [colorTagExtension],
+      extensions: [colorTagExtension, calloutTagExtension],
     });
   }
 
@@ -393,7 +403,11 @@ export class ThinMarkdownEditor extends LitElement {
    * @memberof ThinMarkdownEditor
    */
   private _extensionCalloutRender = (): HTMLTemplateResult => {
-    return html` <com-menu-item slot="item" icon="sign-hanging-solid-full">
+    return html` <com-menu-item
+      slot="item"
+      icon="sign-hanging-solid-full"
+      @click-menu-item=${this._handleExtensionCalloutClick}
+    >
       Callout
       <com-menu-item
         variant="brand"
@@ -429,6 +443,25 @@ export class ThinMarkdownEditor extends LitElement {
     </com-menu-item>`;
   };
 
+  /**
+   * コールアウトをエディタに追加
+   *
+   * @private
+   * @param {Event} e
+   * @memberof ThinMarkdownEditor
+   */
+  private _handleExtensionCalloutClick = (e: Event) => {
+    if (!this.markdownEditor) return;
+
+    const item = e.target as ComMenuItem;
+    const variant: Variant = item.variant;
+
+    this.markdownEditor.focus();
+    formatCalloutMarkdown(this.markdownEditor, variant);
+    this._adjustTextareaHeight();
+    this._fetchMarkdown();
+  };
+
   // ------------------------------
   // Color
   // ------------------------------
@@ -460,7 +493,7 @@ export class ThinMarkdownEditor extends LitElement {
 
     this.markdownEditor.focus();
     formatColorMarkdown(this.markdownEditor);
-    emit(this, "input");
+    this._fetchMarkdown();
   };
 
   // ------------------------------
