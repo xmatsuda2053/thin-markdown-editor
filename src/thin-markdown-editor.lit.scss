@@ -85,4 +85,20 @@
       line-height: 1.5;
     }
   }
+
+  &.un-radius {
+    header {
+      border-radius: 0 !important;
+      .tabs {
+        com-svg-button {
+          &:first-child {
+            --button-radius-top-left: 0;
+          }
+        }
+      }
+    }
+    main {
+      border-radius: 0 !important;
+    }
+  }
 }

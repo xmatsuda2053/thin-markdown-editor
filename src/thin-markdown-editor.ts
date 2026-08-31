@@ -66,7 +66,17 @@ export class ThinMarkdownEditor extends LitElement {
    * @type {string}
    * @memberof ThinMarkdownEditor
    */
-  @property({ type: String }) value: string = "";
+  @property({ type: String, reflect: true })
+  value: string = "";
+
+  /**
+   * Radius不要の設定
+   *
+   * @type {boolean}
+   * @memberof ThinMarkdownEditor
+   */
+  @property({ type: Boolean, attribute: "un-radius" })
+  unRadius: boolean = false;
 
   /**
    * 編集モードの制御
@@ -75,7 +85,8 @@ export class ThinMarkdownEditor extends LitElement {
    * @type {boolean}
    * @memberof ThinMarkdownEditor
    */
-  @state() isEditMode: boolean = false;
+  @state()
+  isEditMode: boolean = false;
 
   /**
    * プレビュー用HTMLコード
@@ -83,7 +94,8 @@ export class ThinMarkdownEditor extends LitElement {
    * @type {string}
    * @memberof ThinMarkdownEditor
    */
-  @state() previewHtml: string = "";
+  @state()
+  previewHtml: string = "";
 
   /**
    * エディタ要素
@@ -91,7 +103,8 @@ export class ThinMarkdownEditor extends LitElement {
    * @type {HTMLTextAreaElement}
    * @memberof ThinMarkdownEditor
    */
-  @query("#markdown-editor") markdownEditor!: HTMLTextAreaElement;
+  @query("#markdown-editor")
+  markdownEditor!: HTMLTextAreaElement;
 
   // -------------------------------------------------------------
   // Initialization
@@ -194,7 +207,12 @@ export class ThinMarkdownEditor extends LitElement {
    * @memberof ThinMarkdownEditor
    */
   protected render(): HTMLTemplateResult {
-    return html`<div class="container">
+    const containerClasses = {
+      container: true,
+      "un-radius": this.unRadius,
+    };
+
+    return html`<div class=${classMap(containerClasses)}>
       <div class="sticky">
         <header>
           <div class="tabs">
