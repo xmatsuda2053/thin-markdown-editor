@@ -1,5 +1,9 @@
 @use "sass:map";
 
+:host {
+  display: inline-flex;
+}
+
 $size: (
   s: (
     height: 24px,

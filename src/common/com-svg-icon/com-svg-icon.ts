@@ -58,6 +58,6 @@ export class ComSvgIcon extends LitElement {
       return nothing;
     }
 
-    return html`<span>${unsafeSVG(svgString)}</span>`;
+    return html`<span class="container">${unsafeSVG(svgString)}</span>`;
   }
 }

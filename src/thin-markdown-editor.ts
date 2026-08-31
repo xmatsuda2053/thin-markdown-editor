@@ -4,6 +4,7 @@ import {
   LitElement,
   unsafeCSS,
   type HTMLTemplateResult,
+  type PropertyValues,
   nothing,
 } from "lit";
 import { unsafeStatic, withStatic } from "lit/static-html.js";
@@ -18,6 +19,11 @@ import "@github/markdown-toolbar-element";
 
 // Components
 import "@/common/com-svg-button/com-svg-button";
+import "@/common/com-menu/com-menu";
+import "@/common/com-menu-item/com-menu-item";
+
+// Utils
+import { emit } from "./utils/EventUtils";
 
 // Styles (Shadow DOM internal styles)
 import githubMarkdownStyles from "github-markdown-css/github-markdown-light.css?inline";
@@ -55,13 +61,37 @@ const toolbarButtons: ToolbarButton[] = [
 @customElement("thin-markdown-editor")
 export class ThinMarkdownEditor extends LitElement {
   /**
+   * Markdownソースコード
+   *
+   * @type {string}
+   * @memberof ThinMarkdownEditor
+   */
+  @property({ type: String }) value: string = "";
+
+  /**
    * 編集モードの制御
    *
    * @private
    * @type {boolean}
    * @memberof ThinMarkdownEditor
    */
-  @state() private _isEditorMode: boolean = true;
+  @state() isEditMode: boolean = false;
+
+  /**
+   * プレビュー用HTMLコード
+   *
+   * @type {string}
+   * @memberof ThinMarkdownEditor
+   */
+  @state() previewHtml: string = "";
+
+  /**
+   * エディタ要素
+   *
+   * @type {HTMLTextAreaElement}
+   * @memberof ThinMarkdownEditor
+   */
+  @query("#markdown-editor") markdownEditor!: HTMLTextAreaElement;
 
   // -------------------------------------------------------------
   // Initialization
@@ -78,6 +108,79 @@ export class ThinMarkdownEditor extends LitElement {
     unsafeCSS(githubMarkdownStyles),
     unsafeCSS(commonStyles),
   ];
+
+  /**
+   * Markdownレンダリング用部品の準備
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private mdRenderer = new marked.Renderer();
+
+  // -------------------------------------------------------------
+  // LifeCycle
+  // -------------------------------------------------------------
+
+  /**
+   * Creates an instance of ThinMarkdownEditor.
+   * @memberof ThinMarkdownEditor
+   */
+  constructor() {
+    super();
+  }
+
+  /**
+   * Renderの直前に実行し、valueの値が空の場合はエディタモードに強制的に切り替
+   *
+   * @protected
+   * @param {PropertyValues} _changedProperties
+   * @memberof ThinMarkdownEditor
+   */
+  protected willUpdate(_changedProperties: PropertyValues) {
+    super.willUpdate(_changedProperties);
+
+    if (_changedProperties.has("value")) {
+      this.previewHtml = marked.parse(this.value || "", {
+        renderer: this.mdRenderer,
+      }) as string;
+    }
+
+    if (!this.value) {
+      this.isEditMode = true;
+    }
+  }
+
+  /**
+   * コンポーネント外から注入されたMarkdown初期値をエディタに登録
+   *
+   * @protected
+   * @param {PropertyValues} _changedProperties
+   * @memberof ThinMarkdownEditor
+   */
+  protected firstUpdated(_changedProperties: PropertyValues) {
+    super.firstUpdated(_changedProperties);
+
+    if (this.isEditMode && this.markdownEditor) {
+      this.markdownEditor.value = this.value;
+    }
+  }
+
+  /**
+   * 画面更新後、MarkdownをHTMLにレンダリング
+   *
+   * @protected
+   * @param {PropertyValues} _changedProperties
+   * @memberof ThinMarkdownEditor
+   */
+  protected updated(_changedProperties: PropertyValues) {
+    super.updated(_changedProperties);
+
+    if (_changedProperties.has("isEditMode")) {
+      if (this.isEditMode) {
+        this._adjustTextareaHeight();
+      }
+    }
+  }
 
   // -------------------------------------------------------------
   // Rendering
@@ -96,38 +199,24 @@ export class ThinMarkdownEditor extends LitElement {
         <header>
           <div class="tabs">
             <!-- タブ-->
-            ${this.headerTabsRender()}
+            ${this._headerTabsRender()}
           </div>
           <div class="toolbar">
-            <!-- ツールバー-->
-            ${this.headerToolbarRender()}
-            <!-- 拡張機能 -->
-            ${this.extensionsMenuRender()}
+            <!--描画モードメニュー-->
+            ${this._viewerMenuRender()}
+            <!-- エディタのツールバー-->
+            ${this._editorToolbarRender()}
           </div>
         </header>
       </div>
       <main>
-        <textarea
-          id="markdown-editor"
-          resize="auto"
-          @input="${this._handleTextareaInput}"
-        ></textarea>
+        <!--ビュアー-->
+        ${this._viewerRender()}
+        <!--エディタ-->
+        ${this._editorRender()}
       </main>
     </div>`;
   }
-
-  /**
-   * 入力内容に合わせてテキストエリアの高さを変更
-   *
-   * @private
-   * @param {Event} e
-   * @memberof ThinMarkdownEditor
-   */
-  private _handleTextareaInput = (e: Event): void => {
-    const textarea = e.target as HTMLTextAreaElement;
-    textarea.style.height = "auto";
-    textarea.style.height = `${textarea.scrollHeight}px`;
-  };
 
   // ------------------------------
   // Header Tabs
@@ -140,34 +229,26 @@ export class ThinMarkdownEditor extends LitElement {
    * @return {*}  {HTMLTemplateResult}
    * @memberof ThinMarkdownEditor
    */
-  private headerTabsRender = (): HTMLTemplateResult => {
+  private _headerTabsRender = (): HTMLTemplateResult => {
     const editorClasses = {
-      active: this._isEditorMode,
+      active: this.isEditMode,
     };
     const previewerClasses = {
-      active: !this._isEditorMode,
+      active: !this.isEditMode,
     };
 
     return html`<com-svg-button
         icon="html5-brands-solid-full"
-        class=${classMap(editorClasses)}
-        @click=${this._handleChangeEditorMode}
+        class=${classMap(previewerClasses)}
+        title="Viewer"
+        @click=${this._handleChangePreviewMode}
       ></com-svg-button>
       <com-svg-button
         icon="markdown-brands-solid-full"
-        class=${classMap(previewerClasses)}
-        @click=${this._handleChangePreviewMode}
+        class=${classMap(editorClasses)}
+        title="Editor"
+        @click=${this._handleChangeEditorMode}
       ></com-svg-button>`;
-  };
-
-  /**
-   * 編集モードに切り替え
-   *
-   * @private
-   * @memberof ThinMarkdownEditor
-   */
-  private _handleChangeEditorMode = () => {
-    this._isEditorMode = true;
   };
 
   /**
@@ -177,43 +258,318 @@ export class ThinMarkdownEditor extends LitElement {
    * @memberof ThinMarkdownEditor
    */
   private _handleChangePreviewMode = () => {
-    this._isEditorMode = false;
+    this.isEditMode = false;
+    emit(this, "md-mode-change-preview");
   };
 
-  // ------------------------------
-  // Header Toolbar
-  // ------------------------------
-
   /**
-   * ヘッダーのツールバーをレンダリング
+   * 編集モードに切り替え
    *
    * @private
    * @memberof ThinMarkdownEditor
    */
-  private headerToolbarRender = (): HTMLTemplateResult => {
+  private _handleChangeEditorMode = () => {
+    this.isEditMode = true;
+    emit(this, "md-mode-change-edit");
+  };
+
+  // ------------------------------
+  // ViewerMenu
+  // ------------------------------
+  private _viewerMenuRender = (): HTMLTemplateResult | typeof nothing => {
+    if (this.isEditMode) return nothing;
+
+    return html` <com-svg-button
+      icon="clipboard-solid-full"
+      title="Clipboard"
+    ></com-svg-button>`;
+  };
+
+  // ------------------------------
+  // Editor Toolbar
+  // ------------------------------
+
+  /**
+   * エディタのツールバーをレンダリング
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _editorToolbarRender = (): HTMLTemplateResult | typeof nothing => {
+    if (!this.isEditMode) return nothing;
+
     return html` <markdown-toolbar for="markdown-editor" class="toolbar-root">
-      ${toolbarButtons.map((b) => {
-        const tag = unsafeStatic(b.tag);
-        return withStatic(html)`
+        ${toolbarButtons.map((b) => {
+          const tag = unsafeStatic(b.tag);
+          return withStatic(html)`
           <${tag}>
             <com-svg-button icon=${b.icon} title=${b.label}></com-svg-button>
           </${tag}>
         `;
-      })}
-    </markdown-toolbar>`;
+        })}
+      </markdown-toolbar>
+      ${this._extensionsMenuRender()}`;
   };
 
   // ------------------------------
   // Extensions
   // ------------------------------
-
   /**
-   * 拡張機能をレンダリング
+   * 拡張機能メニューをレンダリング
    *
    * @private
    * @memberof ThinMarkdownEditor
    */
-  private extensionsMenuRender = (): HTMLTemplateResult => {
-    return html`<com-svg-button icon="ellipsis-solid-full"></com-svg-button>`;
+  private _extensionsMenuRender = (): HTMLTemplateResult | typeof nothing => {
+    return html`<com-menu>
+      <com-svg-button
+        icon="ellipsis-solid-full"
+        slot="trigger"
+        title="Extension"
+      ></com-svg-button>
+      <!--Callout-->
+      ${this._extensionCalloutRender()}
+      <!--Color-->
+      ${this._extensionColorRender()}
+      <!--Table-->
+      ${this._extensionTableRender()}
+      <!--CopyLine-->
+      ${this._extensionCopyLineRender()}
+      <!--CopyBlock-->
+      ${this._extensionCopyBlockRender()}
+      <!--TimeStamp-->
+      ${this._extensionTimeStampRender()}
+    </com-menu>`;
+  };
+
+  // ------------------------------
+  // Callout
+  // ------------------------------
+
+  /**
+   * コールアウト機能の呼び出しを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _extensionCalloutRender = (): HTMLTemplateResult => {
+    return html` <com-menu-item slot="item" icon="sign-hanging-solid-full">
+      Callout
+      <com-menu-item
+        variant="brand"
+        slot="submenu"
+        icon="circle-info-solid-full"
+      >
+        Information
+      </com-menu-item>
+      <com-menu-item
+        variant="success"
+        slot="submenu"
+        icon="circle-check-solid-full"
+      >
+        Check
+      </com-menu-item>
+      <com-menu-item variant="neutral" slot="submenu" icon="gear-solid-full">
+        Setting
+      </com-menu-item>
+      <com-menu-item
+        variant="warning"
+        slot="submenu"
+        icon="triangle-exclamation-solid-full"
+      >
+        Warning
+      </com-menu-item>
+      <com-menu-item
+        variant="danger"
+        slot="submenu"
+        icon="circle-exclamation-solid-full"
+      >
+        Alert
+      </com-menu-item>
+    </com-menu-item>`;
+  };
+
+  // ------------------------------
+  // Color
+  // ------------------------------
+
+  /**
+   * カラー設定機能の呼び出しを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _extensionColorRender = (): HTMLTemplateResult => {
+    return html` <com-menu-item slot="item" icon="palette-solid-full">
+      Color
+    </com-menu-item>`;
+  };
+
+  // ------------------------------
+  // Table
+  // ------------------------------
+
+  /**
+   * テーブル機能の呼び出しを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _extensionTableRender = (): HTMLTemplateResult => {
+    return html`<com-menu-item slot="item" icon="table-solid-full">
+      Table
+    </com-menu-item>`;
+  };
+
+  // ------------------------------
+  // CopyLine
+  // ------------------------------
+
+  /**
+   * １行コピー機能の呼び出しを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _extensionCopyLineRender = (): HTMLTemplateResult => {
+    return html` <com-menu-item slot="item" icon="grip-lines-solid-full">
+      CopyLine
+    </com-menu-item>`;
+  };
+
+  // ------------------------------
+  // CopyBlock
+  // ------------------------------
+
+  /**
+   * 範囲コピー機能の呼び出しを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _extensionCopyBlockRender = (): HTMLTemplateResult => {
+    return html` <com-menu-item slot="item" icon="xmarks-lines-solid-full">
+      CopyBlock
+    </com-menu-item>`;
+  };
+
+  // ------------------------------
+  // TimeStamp
+  // ------------------------------
+
+  /**
+   * タイムスタンプ機能の呼び出しを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _extensionTimeStampRender = (): HTMLTemplateResult => {
+    return html` <com-menu-item slot="item" icon="clock-solid-full">
+      TimeStamp
+    </com-menu-item>`;
+  };
+
+  // ------------------------------
+  // Viewer
+  // ------------------------------
+
+  /**
+   * ビュアーを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _viewerRender = (): HTMLTemplateResult | typeof nothing => {
+    if (this.isEditMode) return nothing;
+
+    return html`<div
+      class="markdown-body"
+      .innerHTML=${this.previewHtml}
+    ></div>`;
+  };
+
+  // ------------------------------
+  // Editor
+  // ------------------------------
+  /**
+   * エディタを描画
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _editorRender = (): HTMLTemplateResult | typeof nothing => {
+    if (!this.isEditMode) return nothing;
+    return html` <textarea
+      id="markdown-editor"
+      resize="auto"
+      .value=${this.value}
+      @input="${this._handleTextareaInput}"
+      @keyup="${this._handleMarkdownKeyup}"
+    ></textarea>`;
+  };
+
+  /**
+   * 入力内容に合わせてテキストエリアの高さを変更
+   *
+   * @private
+   * @param {Event} e
+   * @memberof ThinMarkdownEditor
+   */
+  private _handleTextareaInput = (e: Event): void => {
+    e.stopPropagation();
+    this._adjustTextareaHeight();
+    this._fetchMarkdown();
+  };
+
+  /**
+   * 入力内容に応じてエディタの高さを自動調整
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _adjustTextareaHeight = (): void => {
+    this.markdownEditor.style.height = "auto";
+    this.markdownEditor.style.height = `${this.markdownEditor.scrollHeight}px`;
+  };
+
+  /**
+   * Markdown入力内容を取得
+   *
+   * @private
+   * @memberof ThinMarkdownEditor
+   */
+  private _fetchMarkdown = () => {
+    // 入力したMarkdownを読み込み
+    this.value = this.markdownEditor.value ?? "";
+
+    if (!this.value) return;
+
+    // 1行目の見出し行レベル1の値をinputイベントで渡す
+    const firstLine = this.value.split(/\r?\n/)[0]?.trim() ?? "";
+    if (!firstLine.startsWith("# ")) return "";
+
+    const match = firstLine.match(/^#\s+(.+)$/);
+    const header1 = match ? match[1] : "";
+    emit(this, "input", { detail: { header1: header1 } });
+  };
+
+  /**
+   * 最終行でのキーアップイベントを検知
+   *
+   * @private
+   * @param {KeyboardEvent} e
+   * @memberof ThinMarkdownEditor
+   */
+  private _handleMarkdownKeyup = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      if (this.markdownEditor) {
+        const value = this.markdownEditor.value;
+        const selectionStart = this.markdownEditor.selectionStart;
+        const isLastLine = !value.slice(selectionStart).includes("\n");
+        if (isLastLine) {
+          emit(this, "keyup-enter-last-line");
+        }
+      }
+    }
   };
 }

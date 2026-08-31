@@ -1,0 +1,25 @@
+.container {
+  background-color: white;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  min-width: 160px;
+  border-radius: var(--radius-s);
+  padding: var(--space-xxs);
+
+  // 非表示時は display: none でレイアウト領域を完全に除外する
+  display: none;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    display 0.2s ease allow-discrete;
+
+  &.open {
+    display: block;
+    opacity: 1;
+
+    // display: none -> display: block になった瞬間の初期スタイル
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}

@@ -1,0 +1,13 @@
+.container {
+  display: inline-block;
+  position: relative;
+
+  .menu-content {
+    position: absolute;
+
+    &.align-right {
+      left: auto;
+      right: 0;
+    }
+  }
+}
